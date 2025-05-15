@@ -9,16 +9,21 @@ import java.awt.geom.*;
 
 public class LoginDialog extends JDialog {
 
-    private static final Color PRIMARY_COLOR = new Color(70, 130, 180); // Match BookStoreGUI
+    private static final Color PRIMARY_COLOR = new Color(70, 130, 180);
     private static final Color SECONDARY_COLOR = new Color(100, 149, 237);
     private static final Color ACCENT_COLOR = new Color(65, 105, 225);
-    
-    // Biến để theo dõi trạng thái đăng nhập
-    private boolean loginSuccess = false;
 
+    private RoundedTextField usernameField;
+    private JPanel userTab;
+    private JPanel adminTab;
+    private JLabel userLabel;
+    private JLabel adminLabel;
+// Biến để theo dõi trạng thái đăng nhập
+   private boolean loginSuccess = false;
     public LoginDialog(JFrame parent) {
+        
         super(parent, "Đăng nhập", true);
-        setSize(400, 500);
+        setSize(400, 700);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
         setResizable(false);
@@ -65,19 +70,19 @@ public class LoginDialog extends JDialog {
         tabPanel.setBorder(new RoundedBorder(10));
 
         // User Tab
-        JPanel userTab = new JPanel();
+        userTab = new JPanel();
         userTab.setLayout(new BorderLayout());
         userTab.setBackground(PRIMARY_COLOR);
-        JLabel userLabel = new JLabel("Người dùng", SwingConstants.CENTER);
+        userLabel = new JLabel("Người dùng", SwingConstants.CENTER);
         userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         userLabel.setForeground(Color.WHITE);
         userTab.add(userLabel, BorderLayout.CENTER);
 
         // Admin Tab
-        JPanel adminTab = new JPanel();
+        adminTab = new JPanel();
         adminTab.setLayout(new BorderLayout());
         adminTab.setBackground(Color.WHITE);
-        JLabel adminLabel = new JLabel("Quản trị viên", SwingConstants.CENTER);
+        adminLabel = new JLabel("Quản trị viên", SwingConstants.CENTER);
         adminLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         adminLabel.setForeground(Color.GRAY);
         adminTab.add(adminLabel, BorderLayout.CENTER);
@@ -101,41 +106,49 @@ public class LoginDialog extends JDialog {
         formPanel.setOpaque(false);
         formPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Form Container with fixed width
+        JPanel formContainer = new JPanel();
+        formContainer.setLayout(new GridBagLayout());
+        formContainer.setOpaque(false);
+        formContainer.setMaximumSize(new Dimension(300, Short.MAX_VALUE));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 10, 0);
+        gbc.fill = GridBagConstraints.HORIZONTAL; // Đảm bảo các thành phần trải rộng theo chiều ngang
+        gbc.gridx = 0;
+        
         // Username Field
         JLabel usernameLabel = new JLabel("Tên đăng nhập");
         usernameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(usernameLabel);
-        formPanel.add(Box.createVerticalStrut(5));
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST; // Căn trái label
+        formContainer.add(usernameLabel, gbc);
 
-        RoundedTextField usernameField = new RoundedTextField("", 20);
-        usernameField.setPreferredSize(new Dimension(0, 40));
-        usernameField.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
-        usernameField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(usernameField);
-        formPanel.add(Box.createVerticalStrut(15));
+        usernameField = new RoundedTextField("user", 20);
+        usernameField.setPreferredSize(new Dimension(300, 40));
+        usernameField.setMaximumSize(new Dimension(300, 40));
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.CENTER; // Căn giữa text field
+        formContainer.add(usernameField, gbc);
 
         // Password Field
         JLabel passwordLabel = new JLabel("Mật khẩu");
         passwordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(passwordLabel);
-        formPanel.add(Box.createVerticalStrut(5));
+        gbc.gridy = 2;
+        gbc.anchor = GridBagConstraints.WEST; // Căn trái label
+        formContainer.add(passwordLabel, gbc);
 
         RoundedPasswordField passwordField = new RoundedPasswordField();
-        passwordField.setPreferredSize(new Dimension(0, 40));
-        passwordField.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(passwordField);
-        formPanel.add(Box.createVerticalStrut(15));
+        passwordField.setPreferredSize(new Dimension(300, 40));
+        passwordField.setMaximumSize(new Dimension(300, 40));
+        gbc.gridy = 3;
+        gbc.anchor = GridBagConstraints.CENTER;
+        formContainer.add(passwordField, gbc);
 
         // Remember Me and Forgot Password
-        JPanel rememberPanel = new JPanel();
+         JPanel rememberPanel = new JPanel();
         rememberPanel.setLayout(new BorderLayout());
         rememberPanel.setOpaque(false);
-        rememberPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 25));
+        rememberPanel.setMaximumSize(new Dimension(300, 25));
 
         JCheckBox rememberCheck = new JCheckBox("Ghi nhớ đăng nhập");
         rememberCheck.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -149,25 +162,32 @@ public class LoginDialog extends JDialog {
         forgotLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rememberPanel.add(forgotLabel, BorderLayout.EAST);
 
-        formPanel.add(rememberPanel);
-        formPanel.add(Box.createVerticalStrut(25));
+        gbc.gridy = 4;
+        gbc.anchor = GridBagConstraints.CENTER;
+        formContainer.add(rememberPanel, gbc);
 
         // Login Button
         JButton loginButton = createStyledButton("Đăng nhập", PRIMARY_COLOR, Color.WHITE);
-        loginButton.setPreferredSize(new Dimension(0, 45));
-        loginButton.setMaximumSize(new Dimension(Short.MAX_VALUE, 45));
-        loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formPanel.add(loginButton);
-        formPanel.add(Box.createVerticalStrut(20));
+        loginButton.setPreferredSize(new Dimension(300, 45));
+        loginButton.setMaximumSize(new Dimension(300, 45));
+        gbc.gridy = 5;
+        gbc.anchor = GridBagConstraints.CENTER;
+        formContainer.add(loginButton, gbc);
 
+        // Add formContainer to formPanel
+        formPanel.add(formContainer);
+        formPanel.add(Box.createVerticalStrut(20));
+        
         // Divider
         JPanel dividerPanel = new JPanel();
         dividerPanel.setLayout(new BoxLayout(dividerPanel, BoxLayout.Y_AXIS));
         dividerPanel.setOpaque(false);
+        dividerPanel.setAlignmentX(Component.CENTER_ALIGNMENT); // Căn giữa divider
 
         JPanel linePanel = new JPanel();
         linePanel.setLayout(new BoxLayout(linePanel, BoxLayout.X_AXIS));
         linePanel.setOpaque(false);
+        linePanel.setMaximumSize(new Dimension(300, 20)); // Giới hạn chiều rộng
 
         JSeparator leftSep = new JSeparator();
         leftSep.setForeground(new Color(220, 220, 220));
@@ -185,9 +205,7 @@ public class LoginDialog extends JDialog {
         linePanel.add(rightSep);
 
         dividerPanel.add(linePanel);
-        dividerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         dividerPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 30));
-
         formPanel.add(dividerPanel);
         formPanel.add(Box.createVerticalStrut(20));
 
@@ -195,6 +213,7 @@ public class LoginDialog extends JDialog {
         JPanel socialPanel = new JPanel();
         socialPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
         socialPanel.setOpaque(false);
+        socialPanel.setMaximumSize(new Dimension(300, 40)); // Giới hạn chiều rộng
 
         JButton fbButton = createSocialButton("FB", new Color(59, 89, 152));
         JButton googleButton = createSocialButton("G", new Color(211, 72, 54));
@@ -211,7 +230,6 @@ public class LoginDialog extends JDialog {
         socialContainer.setOpaque(false);
         socialContainer.add(socialPanel);
         socialContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         formPanel.add(socialContainer);
         formPanel.add(Box.createVerticalStrut(20));
 
@@ -219,6 +237,7 @@ public class LoginDialog extends JDialog {
         JPanel signupPanel = new JPanel();
         signupPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         signupPanel.setOpaque(false);
+        signupPanel.setMaximumSize(new Dimension(300, 20)); // Giới hạn chiều rộng
 
         JLabel noAccountLabel = new JLabel("Chưa có tài khoản?");
         noAccountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -236,8 +255,8 @@ public class LoginDialog extends JDialog {
         signupContainer.setOpaque(false);
         signupContainer.add(signupPanel);
         signupContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         formPanel.add(signupContainer);
+
         contentPanel.add(formPanel);
 
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -273,6 +292,8 @@ public class LoginDialog extends JDialog {
                 userLabel.setForeground(Color.WHITE);
                 adminTab.setBackground(Color.WHITE);
                 adminLabel.setForeground(Color.GRAY);
+                usernameField.setText("");
+                usernameField.setPlaceholder("user");
             }
         });
 
@@ -283,6 +304,8 @@ public class LoginDialog extends JDialog {
                 adminLabel.setForeground(Color.WHITE);
                 userTab.setBackground(Color.WHITE);
                 userLabel.setForeground(Color.GRAY);
+                usernameField.setText("");
+                usernameField.setPlaceholder("admin");
             }
         });
 
@@ -290,26 +313,21 @@ public class LoginDialog extends JDialog {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
 
-            if (username.isEmpty() || password.isEmpty()) {
+            if (username.isEmpty() || username.equals("user") || username.equals("admin") || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin", "Lỗi", JOptionPane.ERROR_MESSAGE);
             } else {
                 boolean isAdmin = adminTab.getBackground().equals(PRIMARY_COLOR);
                 String userType = isAdmin ? "Quản trị viên" : "Người dùng";
                 JOptionPane.showMessageDialog(this, "Đăng nhập thành công với vai trò: " + userType, "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                loginSuccess = true; // Đánh dấu đăng nhập thành công
                 dispose();
             }
         });
     }
 
-    /**
-     * Kiểm tra xem việc đăng nhập có thành công hay không
-     * @return true nếu đăng nhập thành công, false nếu không thành công
-     */
-    public boolean isSuccess() {
+      public boolean isSuccess() {
         return loginSuccess;
-    }
-
+  }  
+    
     private JButton createStyledButton(String text, Color bgColor, Color textColor) {
         JButton button = new JButton(text) {
             @Override
@@ -396,15 +414,48 @@ public class LoginDialog extends JDialog {
         });
         return button;
     }
-
+    
     private class RoundedTextField extends JTextField {
         private Shape shape;
         private Color borderColor = new Color(200, 200, 200);
-        public RoundedTextField(String text, int columns) {
-            super(text, columns);
+        private String placeholder;
+
+        public RoundedTextField(String placeholder, int columns) {
+            super("", columns);
+            this.placeholder = placeholder;
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            setForeground(Color.GRAY);
+            setText(placeholder);
+
+            // Xử lý placeholder
+            addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (getText().equals(placeholder)) {
+                        setText("");
+                        setForeground(Color.BLACK);
+                    }
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (getText().isEmpty()) {
+                        setText(placeholder);
+                        setForeground(Color.GRAY);
+                    }
+                }
+            });
         }
+
+        public void setPlaceholder(String placeholder) {
+            this.placeholder = placeholder;
+            if (getText().isEmpty() || getText().equals("user") || getText().equals("admin")) {
+                setText(placeholder);
+                setForeground(Color.GRAY);
+            }
+        }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -414,6 +465,7 @@ public class LoginDialog extends JDialog {
             super.paintComponent(g2);
             g2.dispose();
         }
+
         @Override
         protected void paintBorder(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -422,6 +474,7 @@ public class LoginDialog extends JDialog {
             g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
             g2.dispose();
         }
+
         @Override
         public boolean contains(int x, int y) {
             if (shape == null || !shape.getBounds().equals(getBounds())) {
@@ -439,6 +492,7 @@ public class LoginDialog extends JDialog {
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -448,6 +502,7 @@ public class LoginDialog extends JDialog {
             super.paintComponent(g2);
             g2.dispose();
         }
+
         @Override
         protected void paintBorder(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -456,6 +511,7 @@ public class LoginDialog extends JDialog {
             g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
             g2.dispose();
         }
+
         @Override
         public boolean contains(int x, int y) {
             if (shape == null || !shape.getBounds().equals(getBounds())) {
@@ -474,6 +530,7 @@ public class LoginDialog extends JDialog {
             this.color2 = color2;
             setOpaque(false);
         }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2d = (Graphics2D) g;
@@ -490,6 +547,7 @@ public class LoginDialog extends JDialog {
         public RoundedBorder(int radius) {
             this.radius = radius;
         }
+
         @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Graphics2D g2 = (Graphics2D) g.create();
