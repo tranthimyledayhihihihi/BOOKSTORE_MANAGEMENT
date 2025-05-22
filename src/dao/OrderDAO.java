@@ -62,6 +62,25 @@ public class OrderDAO {
       
       return orders;
    }
+public Order getOrderById(int orderId) {
+   Order order = null;
+
+   try (Connection conn = DBConnection.getConnection()) {
+      String sql = "SELECT o.*, c.name FROM orders o JOIN customers c ON o.customer_id = c.customer_id WHERE o.order_id = ?";
+      PreparedStatement ps = conn.prepareStatement(sql);
+      ps.setInt(1, orderId);
+      ResultSet rs = ps.executeQuery();
+
+      if (rs.next()) {
+         order = mapResultSetToOrder(rs);
+      }
+
+   } catch (Exception e) {
+      e.printStackTrace();
+   }
+
+   return order;
+}
 
    public int getTotalTodayOrders() {
       int totalOrders = 0;

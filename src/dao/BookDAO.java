@@ -97,6 +97,37 @@ public class BookDAO {
         return books;
     }
 
+    public List<Book> getFeaturedBooks() {
+        List<Book> books = new ArrayList<>();
+        String sql = "SELECT TOP 8 b.*, a.name as author_name, c.name as category_name, p.name as publisher_name, " +
+                     "COALESCE(AVG(CAST(r.rating AS FLOAT)), 0) AS avg_rating, " +
+                     "COUNT(r.review_id) AS review_count " +
+                     "FROM BOOKS b " +
+                     "LEFT JOIN AUTHORS a ON b.author_id = a.author_id " +
+                     "LEFT JOIN CATEGORIES c ON b.category_id = c.category_id " +
+                     "LEFT JOIN PUBLISHERS p ON b.publisher_id = p.publisher_id " +
+                     "LEFT JOIN REVIEWS r ON b.book_id = r.book_id " +
+                     "WHERE b.stock_quantity > 0 " +
+                     "GROUP BY b.book_id, b.title, b.author_id, b.category_id, b.publisher_id, " +
+                     "b.ISBN, b.price, b.stock_quantity, b.publication_date, b.description, " +
+                     "b.image_url, a.name, c.name, p.name " +
+                     "ORDER BY avg_rating DESC, review_count DESC, b.publication_date DESC";
+        
+        try (Connection conn = DBConnection.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                Book book = mapResultSetToBook(rs);
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return books;
+    }
+
     public List<Book> getLowStockBooks() {
         List<Book> books = new ArrayList<>();
 
@@ -366,4 +397,4 @@ public class BookDAO {
         
         return book;
     }
-} 
+}
