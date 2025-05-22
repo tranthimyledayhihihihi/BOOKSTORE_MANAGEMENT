@@ -1,7 +1,7 @@
 package GUI;
 
 import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -112,8 +112,6 @@ public class SignupDialog extends JDialog {
 
         // Signup Button
         JButton signupButton = createStyledButton("Đăng ký", PRIMARY_COLOR, Color.WHITE);
-        signupButton.setPreferredSize(new Dimension(0, 45));
-        signupButton.setMaximumSize(new Dimension(Short.MAX_VALUE, 45));
         signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JPasswordField finalPasswordField = passwordField;
@@ -182,6 +180,42 @@ public class SignupDialog extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 dispose();
                 new LoginDialog(parent).setVisible(true);
+            }
+        });
+
+        loginPanel.add(haveAccountLabel);
+        loginPanel.add(Box.createHorizontalStrut(5));
+        loginPanel.add(loginLabel);
+        loginPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(loginPanel);
+        add(contentPanel, BorderLayout.CENTER);
+
+        JPanel footerPanel = new JPanel();
+        footerPanel.setBackground(new Color(240, 240, 240));
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        JLabel searchLabel = new JLabel("Sách mới");
+        searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        JTextField searchField = new JTextField("Type here to search");
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        searchField.setPreferredSize(new Dimension(200, 30));
+
+        footerPanel.add(searchLabel);
+        footerPanel.add(Box.createHorizontalStrut(10));
+        footerPanel.add(searchField);
+
+        add(footerPanel, BorderLayout.SOUTH);
+
+        homeLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
             }
         });
     }
@@ -413,20 +447,20 @@ public class SignupDialog extends JDialog {
         private Color color2;
         
         public GradientPanel(Color color1, Color color2) {
-            super();
             this.color1 = color1;
             this.color2 = color2;
             setOpaque(false);
         }
-        
+
         @Override
         protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g;
+            Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), 0, color2);
             g2d.setPaint(gp);
             g2d.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g);
+            g2d.dispose();
         }
     }
 

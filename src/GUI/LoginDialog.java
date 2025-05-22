@@ -19,7 +19,15 @@ public class LoginDialog extends JDialog {
     private JLabel homeLabel;
     private util.DBConnection dbConnection = new util.DBConnection();
 
+    private RoundedTextField usernameField;
+    private JPanel userTab;
+    private JPanel adminTab;
+    private JLabel userLabel;
+    private JLabel adminLabel;
+// Biến để theo dõi trạng thái đăng nhập
+   private boolean loginSuccess = false;
     public LoginDialog(JFrame parent) {
+        
         super(parent, "Đăng nhập", true);
         setLocationRelativeTo(parent); // Đặt vị trí trung tâm
         setLayout(new BorderLayout());
@@ -78,7 +86,7 @@ public class LoginDialog extends JDialog {
         tabPanel.setBackground(Color.WHITE);
 
         // User Tab
-        JPanel userTab = new JPanel();
+        userTab = new JPanel();
         userTab.setLayout(new BorderLayout());
         userTab.setBackground(PRIMARY_COLOR);
         userTab.setBorder(new RoundedBorder(20));
@@ -88,7 +96,7 @@ public class LoginDialog extends JDialog {
         userTab.add(userLabel, BorderLayout.CENTER);
 
         // Admin Tab
-        JPanel adminTab = new JPanel();
+        adminTab = new JPanel();
         adminTab.setLayout(new BorderLayout());
         adminTab.setBackground(Color.WHITE);
         adminTab.setBorder(new RoundedBorder(20));
@@ -189,10 +197,12 @@ public class LoginDialog extends JDialog {
         JPanel dividerPanel = new JPanel();
         dividerPanel.setLayout(new BoxLayout(dividerPanel, BoxLayout.Y_AXIS));
         dividerPanel.setOpaque(false);
+        dividerPanel.setAlignmentX(Component.CENTER_ALIGNMENT); // Căn giữa divider
 
         JPanel linePanel = new JPanel();
         linePanel.setLayout(new BoxLayout(linePanel, BoxLayout.X_AXIS));
         linePanel.setOpaque(false);
+        linePanel.setMaximumSize(new Dimension(300, 20)); // Giới hạn chiều rộng
 
         JSeparator leftSep = new JSeparator();
         leftSep.setForeground(new Color(220, 220, 220));
@@ -210,9 +220,7 @@ public class LoginDialog extends JDialog {
         linePanel.add(rightSep);
 
         dividerPanel.add(linePanel);
-        dividerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         dividerPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 30));
-
         formPanel.add(dividerPanel);
         formPanel.add(Box.createVerticalStrut(30));
 
@@ -220,6 +228,7 @@ public class LoginDialog extends JDialog {
         JPanel socialPanel = new JPanel();
         socialPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 0));
         socialPanel.setOpaque(false);
+        socialPanel.setMaximumSize(new Dimension(300, 40)); // Giới hạn chiều rộng
 
         JButton fbButton = createSocialButton("FB", new Color(59, 89, 152));
         JButton googleButton = createSocialButton("G", new Color(211, 72, 54));
@@ -236,7 +245,6 @@ public class LoginDialog extends JDialog {
         socialContainer.setOpaque(false);
         socialContainer.add(socialPanel);
         socialContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         formPanel.add(socialContainer);
         formPanel.add(Box.createVerticalStrut(30));
 
@@ -244,6 +252,7 @@ public class LoginDialog extends JDialog {
         JPanel signupPanel = new JPanel();
         signupPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         signupPanel.setOpaque(false);
+        signupPanel.setMaximumSize(new Dimension(300, 20)); // Giới hạn chiều rộng
 
         JLabel noAccountLabel = new JLabel("Chưa có tài khoản?");
         noAccountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -262,8 +271,8 @@ public class LoginDialog extends JDialog {
         signupContainer.setOpaque(false);
         signupContainer.add(signupPanel);
         signupContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         formPanel.add(signupContainer);
+
         contentPanel.add(formPanel);
 
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -509,7 +518,7 @@ public class LoginDialog extends JDialog {
         });
         return button;
     }
-
+    
     private class RoundedTextField extends JTextField {
         private Shape shape;
         private Color borderColor = new Color(200, 200, 200);
