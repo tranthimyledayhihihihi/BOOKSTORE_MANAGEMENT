@@ -316,8 +316,7 @@ public class AccountDAO {
         // } else {
         //     System.out.println("Login failed.");
         // }
-        String hashedPassword = PasswordHasher.hashPassword("123123");
-        System.out.println("Hashed password: " + hashedPassword);
+        
     }
 
     /**

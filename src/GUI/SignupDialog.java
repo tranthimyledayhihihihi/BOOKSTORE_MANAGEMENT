@@ -1,482 +1,490 @@
 package GUI;
 
+import bll.AccountBLL;
+import bll.AccountBLL.RegisterResult;
+
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
-import java.sql.*;
+import java.util.regex.Pattern;
 
 public class SignupDialog extends JDialog {
+    // UI Colors
+    private static final Color PRIMARY_COLOR = new Color(59, 89, 182);
+    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static final Color TEXT_COLOR = new Color(44, 62, 80);
+    private static final Color ERROR_COLOR = new Color(231, 76, 60);
+    private static final Color SUCCESS_COLOR = new Color(46, 204, 113);
 
-    private static final Color PRIMARY_COLOR = new Color(41, 128, 185); // Modern blue
-    private static final Color SECONDARY_COLOR = new Color(52, 152, 219); // Lighter blue
-    private static final Color BACKGROUND_COLOR = new Color(236, 240, 241); // Light gray background
-    private static final Color SIGNUP_TEXT_COLOR = new Color(44, 62, 80); // Dark blue-gray text
+    // UI Constants
+    private static final String[] ACCOUNT_FIELDS = {"Tên đăng nhập *", "Email *", "Mật khẩu *", "Xác nhận mật khẩu *"};
+    private static final String[] PERSONAL_FIELDS = {"Họ và tên *", "Số điện thoại *", "Địa chỉ *"};
 
+    // Input Fields
+    private JTextField usernameField;
+    private JTextField emailField;
+    private JPasswordField passwordField;
+    private JPasswordField confirmPasswordField;
+    private JTextField fullNameField;
+    private JTextField phoneField;
+    private JTextArea addressArea;
+    
+    // Status Labels
+    private JLabel statusLabel;
+    private JButton signupButton;
+    
+    // Business Logic
+    private AccountBLL accountBL;
     private boolean success = false;
-    private JLabel homeLabel;
-    private util.DBConnection dbConnection = new util.DBConnection();
 
     public SignupDialog(JFrame parent) {
-        super(parent, "Đăng ký", true);
-        setSize(450, 650);
-        setLocationRelativeTo(parent);
+        super(parent, "Đăng ký tài khoản", true);
+        this.accountBL = new AccountBLL();
+        initializeUI();
+        setupValidation();
+    }
+
+    private void initializeUI() {
+        setSize(650, 600);
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BACKGROUND_COLOR);
-
-        // Header with gradient
-        JPanel headerPanel = new GradientPanel(PRIMARY_COLOR, SECONDARY_COLOR);
-        headerPanel.setLayout(new BorderLayout());
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
-        headerPanel.setPreferredSize(new Dimension(0, 80));
-
-        JLabel titleLabel = new JLabel("Nhà Sách Online");
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-
-        homeLabel = createHoverLabel("Trang chủ");
-        homeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        headerPanel.add(homeLabel, BorderLayout.EAST);
-
-        add(headerPanel, BorderLayout.NORTH);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         // Main Panel
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
-        mainPanel.setBorder(BorderFactory.createCompoundBorder(
-            new ShadowBorder(),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
 
-        // Content Panel
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        // Header
+        mainPanel.add(createHeader(), BorderLayout.NORTH);
+        
+        // Content
+        mainPanel.add(createContent(), BorderLayout.CENTER);
+        
+        // Footer
+        mainPanel.add(createFooter(), BorderLayout.SOUTH);
 
-        // Signup Title with icon
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        titlePanel.setBackground(Color.WHITE);
-        JLabel signupIcon = new JLabel("\uD83D\uDCDD"); // Unicode cho 📝
-        signupIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-        JLabel signupTitle = new JLabel("Đăng ký tài khoản");
-        signupTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        signupTitle.setForeground(SIGNUP_TEXT_COLOR);
-        titlePanel.add(signupIcon);
-        titlePanel.add(signupTitle);
-        contentPanel.add(titlePanel);
-        contentPanel.add(Box.createVerticalStrut(30));
+        add(mainPanel);
+        
+        // Set default button
+        getRootPane().setDefaultButton(signupButton);
+    }
+
+    private JPanel createHeader() {
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+
+        JLabel titleLabel = new JLabel("Đăng ký tài khoản");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JLabel subtitleLabel = new JLabel("Tạo tài khoản mới để truy cập hệ thống");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitleLabel.setForeground(TEXT_COLOR);
+        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        headerPanel.add(subtitleLabel, BorderLayout.SOUTH);
+
+        return headerPanel;
+    }
+
+    private JPanel createContent() {
+        JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Status Label
+        statusLabel = new JLabel(" ");
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        statusLabel.setPreferredSize(new Dimension(0, 20));
+        contentPanel.add(statusLabel, BorderLayout.NORTH);
 
         // Form Panel
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setOpaque(false);
-        formPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel formPanel = new JPanel(new GridLayout(1, 2, 25, 0));
+        formPanel.setBackground(BACKGROUND_COLOR);
 
-        String[] labels = {"Họ và tên:", "Email:", "Tên đăng nhập:", "Mật khẩu:", "Nhập lại mật khẩu:", "Số điện thoại:"};
-        JTextField[] fields = new JTextField[labels.length];
-        JPasswordField passwordField = null;
-        JPasswordField confirmPasswordField = null;
+        // Account Information Section
+        JPanel accountPanel = createSection("Thông tin tài khoản", ACCOUNT_FIELDS);
+        
+        // Personal Information Section  
+        JPanel personalPanel = createSection("Thông tin cá nhân", PERSONAL_FIELDS);
 
-        for (int i = 0; i < labels.length; i++) {
-            JPanel labelPanel = new JPanel(new BorderLayout(10, 0));
-            labelPanel.setOpaque(false);
-            JLabel label = new JLabel(labels[i]);
-            label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            label.setForeground(SIGNUP_TEXT_COLOR);
-            labelPanel.add(label, BorderLayout.CENTER);
-            contentPanel.add(labelPanel);
-            contentPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(accountPanel);
+        formPanel.add(personalPanel);
+        contentPanel.add(formPanel, BorderLayout.CENTER);
 
-            if (i == 3) {
-                passwordField = new RoundedPasswordField();
-                passwordField.setPreferredSize(new Dimension(0, 40));
-                passwordField.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
-                contentPanel.add(passwordField);
-            } else if (i == 4) {
-                confirmPasswordField = new RoundedPasswordField();
-                confirmPasswordField.setPreferredSize(new Dimension(0, 40));
-                confirmPasswordField.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
-                contentPanel.add(confirmPasswordField);
-            } else {
-                fields[i] = new RoundedTextField("", 20);
-                fields[i].setPreferredSize(new Dimension(0, 40));
-                fields[i].setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
-                contentPanel.add(fields[i]);
+        return contentPanel;
+    }
+
+    private JPanel createFooter() {
+        JPanel footerPanel = new JPanel(new BorderLayout(0, 15));
+        footerPanel.setBackground(BACKGROUND_COLOR);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(BACKGROUND_COLOR);
+        
+        signupButton = createStyledButton("ĐĂNG KÝ");
+        signupButton.addActionListener(e -> handleSignup());
+        buttonPanel.add(signupButton);
+
+        // Login Link Panel
+        JPanel loginPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        loginPanel.setBackground(BACKGROUND_COLOR);
+        
+        JLabel loginPrompt = new JLabel("Đã có tài khoản? ");
+        loginPrompt.setForeground(TEXT_COLOR);
+        loginPrompt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        
+        JLabel loginLink = new JLabel("Đăng nhập ngay");
+        loginLink.setForeground(PRIMARY_COLOR);
+        loginLink.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        loginLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        loginLink.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
+                new LoginDialog((JFrame) getParent()).setVisible(true);
             }
-            contentPanel.add(Box.createVerticalStrut(15));
+            
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                loginLink.setText("<html><u>Đăng nhập ngay</u></html>");
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                loginLink.setText("Đăng nhập ngay");
+            }
+        });
+
+        loginPanel.add(loginPrompt);
+        loginPanel.add(loginLink);
+
+        footerPanel.add(buttonPanel, BorderLayout.CENTER);
+        footerPanel.add(loginPanel, BorderLayout.SOUTH);
+
+        return footerPanel;
+    }
+
+    private JPanel createSection(String title, String[] fields) {
+        JPanel sectionPanel = new JPanel();
+        sectionPanel.setLayout(new BoxLayout(sectionPanel, BoxLayout.Y_AXIS));
+        sectionPanel.setBackground(BACKGROUND_COLOR);
+
+        // Section Title
+        JLabel sectionTitle = new JLabel(title);
+        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        sectionTitle.setForeground(TEXT_COLOR);
+        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sectionPanel.add(sectionTitle);
+        sectionPanel.add(Box.createVerticalStrut(15));
+
+        // Create input fields
+        for (String field : fields) {
+            sectionPanel.add(createFieldGroup(field));
+            sectionPanel.add(Box.createVerticalStrut(12));
         }
 
-        // Signup Button
-        JButton signupButton = createStyledButton("Đăng ký", PRIMARY_COLOR, Color.WHITE);
-        signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return sectionPanel;
+    }
 
-        JPasswordField finalPasswordField = passwordField;
-        JPasswordField finalConfirmPasswordField = confirmPasswordField;
-        signupButton.addActionListener(e -> {
-            String fullName = fields[0].getText();
-            String email = fields[1].getText();
-            String username = fields[2].getText();
-            String password = new String(finalPasswordField.getPassword());
-            String confirmPassword = new String(finalConfirmPasswordField.getPassword());
-            String phone = fields[5].getText();
+    private JPanel createFieldGroup(String labelText) {
+        JPanel fieldPanel = new JPanel();
+        fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.Y_AXIS));
+        fieldPanel.setBackground(BACKGROUND_COLOR);
+        fieldPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            if (fullName.isEmpty() || email.isEmpty() || username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || phone.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        // Label
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        label.setForeground(TEXT_COLOR);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        if (labelText.endsWith("*")) {
+            label.setToolTipText("Trường bắt buộc");
+        }
+        fieldPanel.add(label);
+        fieldPanel.add(Box.createVerticalStrut(5));
 
-            if (!password.equals(confirmPassword)) {
-                JOptionPane.showMessageDialog(this, "Mật khẩu không khớp", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        // Input Component
+        JComponent inputComponent = createInputComponent(labelText);
+        inputComponent.setMaximumSize(new Dimension(Integer.MAX_VALUE, 
+            labelText.equals("Địa chỉ *") ? 70 : 35));
+        inputComponent.setAlignmentX(Component.LEFT_ALIGNMENT);
+        fieldPanel.add(inputComponent);
 
-            if (registerUser(fullName, email, username, password, phone)) {
-                success = true;
-                JOptionPane.showMessageDialog(this, "Đăng ký thành công! Vui lòng đăng nhập.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
-            }
-        });
+        return fieldPanel;
+    }
 
-        contentPanel.add(signupButton);
-        contentPanel.add(Box.createVerticalStrut(20));
+    private JComponent createInputComponent(String fieldType) {
+        switch (fieldType) {
+            case "Tên đăng nhập *":
+                usernameField = new JTextField();
+                styleTextField(usernameField);
+                return usernameField;
+                
+            case "Email *":
+                emailField = new JTextField();
+                styleTextField(emailField);
+                return emailField;
+                
+            case "Mật khẩu *":
+                passwordField = new JPasswordField();
+                styleTextField(passwordField);
+                return passwordField;
+                
+            case "Xác nhận mật khẩu *":
+                confirmPasswordField = new JPasswordField();
+                styleTextField(confirmPasswordField);
+                return confirmPasswordField;
+                
+            case "Họ và tên *":
+                fullNameField = new JTextField();
+                styleTextField(fullNameField);
+                return fullNameField;
+                
+            case "Số điện thoại *":
+                phoneField = new JTextField();
+                styleTextField(phoneField);
+                return phoneField;
+                
+            case "Địa chỉ *":
+                addressArea = new JTextArea(3, 20);
+                addressArea.setLineWrap(true);
+                addressArea.setWrapStyleWord(true);
+                addressArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                addressArea.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(220, 220, 220)),
+                    BorderFactory.createEmptyBorder(8, 10, 8, 10)
+                ));
+                JScrollPane scrollPane = new JScrollPane(addressArea);
+                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                return scrollPane;
+                
+            default:
+                JTextField textField = new JTextField();
+                styleTextField(textField);
+                return textField;
+        }
+    }
 
-        // Login Link
-        JPanel loginPanel = new JPanel();
-        loginPanel.setOpaque(false);
-        loginPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-
-        JLabel haveAccountLabel = new JLabel("Đã có tài khoản?");
-        haveAccountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        haveAccountLabel.setForeground(SIGNUP_TEXT_COLOR);
-
-        JLabel loginLabel = new JLabel("Đăng nhập");
-        loginLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        loginLabel.setForeground(PRIMARY_COLOR);
-        loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        loginPanel.add(haveAccountLabel);
-        loginPanel.add(Box.createHorizontalStrut(5));
-        loginPanel.add(loginLabel);
-
-        contentPanel.add(loginPanel);
-
-        mainPanel.add(contentPanel, BorderLayout.CENTER);
-        add(mainPanel, BorderLayout.CENTER);
-
-        // Event Listeners
-        homeLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                dispose();
-            }
-        });
-
-        loginLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                dispose();
-                new LoginDialog(parent).setVisible(true);
-            }
-        });
-
-        loginPanel.add(haveAccountLabel);
-        loginPanel.add(Box.createHorizontalStrut(5));
-        loginPanel.add(loginLabel);
-        loginPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        contentPanel.add(Box.createVerticalStrut(20));
-        contentPanel.add(loginPanel);
-        add(contentPanel, BorderLayout.CENTER);
-
-        JPanel footerPanel = new JPanel();
-        footerPanel.setBackground(new Color(240, 240, 240));
-        footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-
-        JLabel searchLabel = new JLabel("Sách mới");
-        searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-        JTextField searchField = new JTextField("Type here to search");
-        searchField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+    private void styleTextField(JTextField textField) {
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        textField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 220, 220)),
+            BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
-        searchField.setPreferredSize(new Dimension(200, 30));
-
-        footerPanel.add(searchLabel);
-        footerPanel.add(Box.createHorizontalStrut(10));
-        footerPanel.add(searchField);
-
-        add(footerPanel, BorderLayout.SOUTH);
-
-        homeLabel.addMouseListener(new MouseAdapter() {
+        
+        // Add focus listener for better UX
+        textField.addFocusListener(new FocusListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                dispose();
+            public void focusGained(FocusEvent e) {
+                textField.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(PRIMARY_COLOR, 2),
+                    BorderFactory.createEmptyBorder(7, 9, 7, 9)
+                ));
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                textField.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(220, 220, 220)),
+                    BorderFactory.createEmptyBorder(8, 10, 8, 10)
+                ));
             }
         });
+    }
+
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(PRIMARY_COLOR.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(PRIMARY_COLOR.brighter());
+                } else {
+                    g2.setColor(getBackground());
+                }
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(PRIMARY_COLOR);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setPreferredSize(new Dimension(450, 45));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        return button;
+    }
+
+    private void setupValidation() {
+        // Real-time validation setup could be added here
+        // For now, we'll validate on submit
+    }
+
+    private void handleSignup() {
+        // Clear previous status
+        setStatusMessage("", Color.BLACK);
+        
+        // Disable button during processing
+        signupButton.setEnabled(false);
+        signupButton.setText("ĐANG XỬ LÝ...");
+        
+        SwingWorker<RegisterResult, Void> worker = new SwingWorker<RegisterResult, Void>() {
+            @Override
+            protected RegisterResult doInBackground() throws Exception {
+                // Get input values
+                String username = usernameField.getText().trim();
+                String email = emailField.getText().trim();
+                String password = new String(passwordField.getPassword());
+                String confirmPassword = new String(confirmPasswordField.getPassword());
+                String fullName = fullNameField.getText().trim();
+                String phone = phoneField.getText().trim();
+                String address = addressArea.getText().trim();
+                
+                // Client-side validation
+                String validationError = validateInput(username, email, password, confirmPassword, fullName, phone, address);
+                if (validationError != null) {
+                    RegisterResult result = new RegisterResult();
+                    result.setSuccess(false);
+                    result.setMessage(validationError);
+                    return result;
+                }
+                
+                // Call business logic
+                return accountBL.registerAccount(username, password, email, fullName, phone, address);
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    RegisterResult result = get();
+                    
+                    if (result.isSuccess()) {
+                        setStatusMessage(result.getMessage(), SUCCESS_COLOR);
+                        success = true;
+                        
+                        // Show success dialog and close
+                        Timer timer = new Timer(1500, e -> {
+                            JOptionPane.showMessageDialog(SignupDialog.this,
+                                "Đăng ký thành công!\nVui lòng đăng nhập để tiếp tục.",
+                                "Thành công",
+                                JOptionPane.INFORMATION_MESSAGE);
+                            dispose();
+                        });
+                        timer.setRepeats(false);
+                        timer.start();
+                        
+                    } else {
+                        setStatusMessage(result.getMessage(), ERROR_COLOR);
+                        
+                        // Focus on appropriate field based on error
+                        focusErrorField(result.getMessage());
+                    }
+                } catch (Exception e) {
+                    setStatusMessage("Lỗi hệ thống: " + e.getMessage(), ERROR_COLOR);
+                    e.printStackTrace();
+                } finally {
+                    // Re-enable button
+                    signupButton.setEnabled(true);
+                    signupButton.setText("ĐĂNG KÝ");
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+
+    private String validateInput(String username, String email, String password, 
+                               String confirmPassword, String fullName, String phone, String address) {
+        // Check empty fields
+        if (username.isEmpty()) return "Tên đăng nhập không được để trống";
+        if (email.isEmpty()) return "Email không được để trống";
+        if (password.isEmpty()) return "Mật khẩu không được để trống";
+        if (confirmPassword.isEmpty()) return "Vui lòng xác nhận mật khẩu";
+        if (fullName.isEmpty()) return "Họ và tên không được để trống";
+        if (phone.isEmpty()) return "Số điện thoại không được để trống";
+        if (address.isEmpty()) return "Địa chỉ không được để trống";
+        
+        // Password confirmation
+        if (!password.equals(confirmPassword)) {
+            return "Mật khẩu xác nhận không khớp";
+        }
+        
+        // Additional client-side validations
+        if (username.length() < 3) return "Tên đăng nhập phải có ít nhất 3 ký tự";
+        if (password.length() < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
+        
+        // Basic email format check
+        if (!email.contains("@") || !email.contains(".")) {
+            return "Email không hợp lệ";
+        }
+        
+        // Basic phone format check
+        if (!phone.matches("^[0-9]{10,11}$")) {
+            return "Số điện thoại không hợp lệ (10-11 chữ số)";
+        }
+        
+        return null; // All validations passed
+    }
+
+    private void focusErrorField(String errorMessage) {
+        String lowerError = errorMessage.toLowerCase();
+        
+        if (lowerError.contains("tên đăng nhập")) {
+            usernameField.requestFocus();
+            usernameField.selectAll();
+        } else if (lowerError.contains("email")) {
+            emailField.requestFocus();
+            emailField.selectAll();
+        } else if (lowerError.contains("mật khẩu")) {
+            passwordField.requestFocus();
+            passwordField.selectAll();
+        } else if (lowerError.contains("tên")) {
+            fullNameField.requestFocus();
+            fullNameField.selectAll();
+        } else if (lowerError.contains("điện thoại")) {
+            phoneField.requestFocus();
+            phoneField.selectAll();
+        } else if (lowerError.contains("địa chỉ")) {
+            addressArea.requestFocus();
+            addressArea.selectAll();
+        }
+    }
+
+    private void setStatusMessage(String message, Color color) {
+        statusLabel.setText(message);
+        statusLabel.setForeground(color);
     }
 
     public boolean isSuccess() {
         return success;
     }
 
-    private boolean registerUser(String fullName, String email, String username, String password, String phone) {
-        Connection conn = null;
-        PreparedStatement stmtCheck = null;
-        PreparedStatement stmtCustomer = null;
-        PreparedStatement stmtAccount = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dbConnection.getConnection();
-            conn.setAutoCommit(false);
-
-            String checkSql = "SELECT username, email FROM ACCOUNTS WHERE username = ? OR email = ?";
-            stmtCheck = conn.prepareStatement(checkSql);
-            stmtCheck.setString(1, username);
-            stmtCheck.setString(2, email);
-            rs = stmtCheck.executeQuery();
-
-            if (rs.next()) {
-                JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc email đã tồn tại", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            String customerSql = "INSERT INTO CUSTOMERS (name, email, phone, created_date, address) VALUES (?, ?, ?, GETDATE(), ?)";
-            stmtCustomer = conn.prepareStatement(customerSql, Statement.RETURN_GENERATED_KEYS);
-            stmtCustomer.setString(1, fullName);
-            stmtCustomer.setString(2, email);
-            stmtCustomer.setString(3, phone);
-            stmtCustomer.setString(4, "");
-            stmtCustomer.executeUpdate();
-
-            rs = stmtCustomer.getGeneratedKeys();
-            if (!rs.next()) {
-                throw new SQLException("Failed to retrieve customer_id");
-            }
-            int customerId = rs.getInt(1);
-
-            String hashedPassword = hashPassword(password);
-
-            String accountSql = "INSERT INTO ACCOUNTS (username, password_hash, email, role_id, is_active, created_date, customer_id) " +
-                              "VALUES (?, ?, ?, 1, 1, GETDATE(), ?)";
-            stmtAccount = conn.prepareStatement(accountSql);
-            stmtAccount.setString(1, username);
-            stmtAccount.setString(2, hashedPassword);
-            stmtAccount.setString(3, email);
-            stmtAccount.setInt(4, customerId);
-            stmtAccount.executeUpdate();
-
-            conn.commit();
-            return true;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            try {
-                if (conn != null) conn.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            JOptionPane.showMessageDialog(this, "Lỗi khi đăng ký: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return false;
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (stmtCheck != null) stmtCheck.close();
-                if (stmtCustomer != null) stmtCustomer.close();
-                if (stmtAccount != null) stmtAccount.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private String hashPassword(String password) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
-            byte[] array = md.digest(password.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : array) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private JButton createStyledButton(String text, Color bgColor, Color textColor) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        button.setBackground(bgColor);
-        button.setForeground(textColor);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(bgColor.darker());
-                button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(bgColor);
-                button.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
-        return button;
-    }
-
-    private JLabel createHoverLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        label.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                label.setForeground(new Color(255, 255, 255, 180));
-                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                label.setForeground(Color.WHITE);
-                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
-        return label;
-    }
-
-    private class RoundedTextField extends JTextField {
-        private Shape shape;
-        private Color borderColor = new Color(200, 200, 200);
-        
-        public RoundedTextField(String text, int columns) {
-            super(text, columns);
-            setOpaque(false);
-            setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-            setBackground(new Color(245, 245, 245));
-        }
-        
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            super.paintComponent(g2);
-            g2.dispose();
-        }
-        
-        @Override
-        protected void paintBorder(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(borderColor);
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            g2.dispose();
-        }
-        
-        @Override
-        public boolean contains(int x, int y) {
-            if (shape == null || !shape.getBounds().equals(getBounds())) {
-                shape = new RoundRectangle2D.Float(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            }
-            return shape.contains(x, y);
-        }
-    }
-
-    private class RoundedPasswordField extends JPasswordField {
-        private Shape shape;
-        private Color borderColor = new Color(200, 200, 200);
-        
-        public RoundedPasswordField() {
-            super();
-            setOpaque(false);
-            setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-            setBackground(new Color(245, 245, 245));
-        }
-        
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            super.paintComponent(g2);
-            g2.dispose();
-        }
-        
-        @Override
-        protected void paintBorder(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(borderColor);
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            g2.dispose();
-        }
-        
-        @Override
-        public boolean contains(int x, int y) {
-            if (shape == null || !shape.getBounds().equals(getBounds())) {
-                shape = new RoundRectangle2D.Float(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-            }
-            return shape.contains(x, y);
-        }
-    }
-
-    private class GradientPanel extends JPanel {
-        private Color color1;
-        private Color color2;
-        
-        public GradientPanel(Color color1, Color color2) {
-            this.color1 = color1;
-            this.color2 = color2;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), 0, color2);
-            g2d.setPaint(gp);
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-            super.paintComponent(g);
-            g2d.dispose();
-        }
-    }
-
-    private class ShadowBorder extends AbstractBorder {
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            // Draw shadow
-            for (int i = 0; i < 5; i++) {
-                g2.setColor(new Color(0, 0, 0, 20 - i * 4));
-                g2.drawRoundRect(x + i, y + i, width - 1 - i * 2, height - 1 - i * 2, 20, 20);
-            }
-            
-            g2.dispose();
-        }
+    // Utility method to clear all fields
+    public void clearFields() {
+        usernameField.setText("");
+        emailField.setText("");
+        passwordField.setText("");
+        confirmPasswordField.setText("");
+        fullNameField.setText("");
+        phoneField.setText("");
+        addressArea.setText("");
+        setStatusMessage("", Color.BLACK);
     }
 }
